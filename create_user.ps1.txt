@@ -1,0 +1,37 @@
+param (
+    [int]$count = 20
+)
+
+Import-Module ActiveDirectory
+
+$usersData = @(
+    @{ prefix = "mkt";   ou = "OU=MKT,DC=alma,DC=local";   group = "MKT";   pass = "Skill39!" }
+    @{ prefix = "sales"; ou = "OU=SALES,DC=alma,DC=local"; group = "SALES"; pass = "Skill39!" }
+    @{ prefix = "tech";  ou = "OU=TECH,DC=alma,DC=local";  group = "TECH";  pass = "Skill39!" }
+    @{ prefix = "hr";    ou = "OU=HR,DC=alma,DC=local";    group = "HR";    pass = "Skill39!Alma" }
+)
+
+foreach ($data in $usersData) {
+    for ($i = 1; $i -le $count; $i++) {
+        $username = "$($data.prefix)$i"
+        
+        # Проверка: если пользователь уже существует, пропускаем его
+        if (Get-ADUser -Filter "SamAccountName -eq '$username'") {
+            continue
+        }
+
+        $securePassword = ConvertTo-SecureString $data.pass -AsPlainText -Force
+
+        # Создание пользователя с отключенным требованием смены пароля
+        New-ADUser -Name $username `
+                   -SamAccountName $username `
+                   -UserPrincipalName "$username@alma.local" `
+                   -Path $data.ou `
+                   -AccountPassword $securePassword `
+                   -ChangePasswordAtLogon $false `
+                   -Enabled $true
+
+        # Добавление пользователя в группу
+        Add-ADGroupMember -Identity $data.group -Members $username
+    }
+}
