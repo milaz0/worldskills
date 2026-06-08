@@ -1,29 +1,41 @@
----
 - name: Manage Windows File Shares and Permissions
   hosts: all
   gather_facts: false
+  
+  vars:
+    file_shares:
+      - name: "MKT_Share"
+        read: "MKT"
+        write: "MKT"
+      - name: "Sales_Share"
+        read: "SALES"
+        write: "SALES"
+      - name: "Tech_Share"
+        read: "TECH"
+        write: "TECH"
+
   tasks:
     - name: Ensure project share root directory exists
       ansible.windows.win_file:
-        path: C:\project_share
+        path: "C:/project_share"
         state: directory
 
     - name: Create specific project share directories
       ansible.windows.win_file:
-        path: "C:\\project_share\\{{ item.name }}"
+        path: "C:/project_share/{{ item.name }}"
         state: directory
       loop: "{{ file_shares }}"
 
-    - name: Share folders with Full Control for Everyone
+    - name: Share Folders with Full Control for Everyone
       ansible.windows.win_share:
         name: "{{ item.name }}"
-        path: "C:\\project_share\\{{ item.name }}"
+        path: "C:/project_share/{{ item.name }}"
         full: "Everyone"
       loop: "{{ file_shares }}"
 
     - name: Configure Read (ReadAndExecute) NTFS permissions
       ansible.windows.win_acl:
-        path: "C:\\project_share\\{{ item.name }}"
+        path: "C:/project_share/{{ item.name }}"
         user: "{{ item.read }}"
         rights: ReadAndExecute
         type: allow
@@ -33,7 +45,7 @@
 
     - name: Configure Write (Modify) NTFS permissions
       ansible.windows.win_acl:
-        path: "C:\\project_share\\{{ item.name }}"
+        path: "C:/project_share/{{ item.name }}"
         user: "{{ item.write }}"
         rights: Modify
         type: allow
